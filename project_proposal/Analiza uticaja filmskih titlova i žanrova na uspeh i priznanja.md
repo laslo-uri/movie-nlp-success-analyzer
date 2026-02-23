@@ -55,7 +55,7 @@ Kombinacija analize tekstualnog sadržaja (titlova) sa žanrovskim i finansijski
 
 **Rezultati:** Feature-based pristup (TF-IDF + SVM) nadmašio deep learning metode (BERT) sa F1-score od 62.35% (ScriptBase) i 64.79% (MSC).
 
-**Relevantnost:** Direktno potvrđuje mogućnost predikcije Oscar nominacija na osnovu teksta. Koristićemo slične feature engineering tehnike, ali umesto scenarija analiziramo titlove i dodajemo finansijske podatke. Koristićemo ensemble metode umesto samo SVM.
+**Relevantnost:** Direktno potvrđuje mogućnost predikcije Oscar nominacija na osnovu teksta. Koristićemo slične feature engineering tehnike, ali umesto scenarija analiziramo titlove i dodajemo finansijske podatke. Pored SVM-a, koristićemo i ensemble metode (Random Forest, XGBoost) kako bismo uporedili različite pristupe.
 
 ### 3.3 Success in Books: A Big Data Approach to Bestsellers [[3]](https://link.springer.com/article/10.1140/epjds/s13688-018-0135-y)
 
@@ -103,7 +103,17 @@ Nakon prikupljanja podataka o filmovima, spojićemo podatke iz TMDB API-ja (nasl
 Za svaki film ćemo iz teksta titlova izvući: (1) TF-IDF vektore najčešćih reči i fraza koje se pojavljuju u dijalozima, (2) sentiment score koji meri da li su dijalozi pretežno pozitivni ili negativni, (3) leksičku raznovrsnost koja pokazuje bogatstvo vokabulara u filmu. Ove karakteristike ćemo kombinovati sa žanrom filma (action, drama, comedy...) koji ćemo enkodirati kao binarne atribute.
 
 **Modelovanje:**
-Ulaz u klasifikatore će biti: žanrovi filma, NLP karakteristike titlova i odnos budžeta. Izlaz je binarna predikcija: uspešan (ROI ≥ 2) ili neuspešan film. Uporedićemo Random Forest, XGBoost i SVM jer su se ovi modeli pokazali kao efikasni za tekstualne karakteristike u relevantnoj literaturi [2]. S obzirom da očekujemo više neuspešnih nego uspešnih filmova, primenićemo SMOTE za balansiranje klasa pre treniranja.
+Ulaz u klasifikatore će biti: žanrovi filma, NLP karakteristike titlova i odnos budžeta. Izlaz je binarna predikcija: uspešan (ROI ≥ 2) ili neuspešan film. 
+
+Uporedićemo tri različita pristupa mašinskog učenja:
+
+1. **Random Forest:** Ensemble metoda koja kombinuje više stabala odlučivanja. Efikasna je za tekstualne karakteristike jer može da hvata nelinearne obrasce i interakcije između atributa.
+
+2. **XGBoost:** Gradient boosting algoritam koji sekvencijalno gradi modele koji ispravljaju greške prethodnih. Posebno je efikasan za struktuirane podatke i pokazao je odlične rezultate u različitim zadacima klasifikacije.
+
+3. **SVM (Support Vector Machine):** Klasifikator koji pronalazi optimalnu hiperravan koja razdvaja klase sa maksimalnom marginom. SVM je posebno efikasan za tekstualne podatke transformisane TF-IDF-om, što je potvrđeno u relevantnoj literaturi [2] gde je TF-IDF + SVM nadmašio deep learning metode (BERT) sa F1-score od 62.35% i 64.79% na različitim korpusima scenarija. Koristićemo RBF kernel za nelinearnu klasifikaciju visokodimenzionalnih tekstualnih karakteristika.
+
+S obzirom da očekujemo više neuspešnih nego uspešnih filmova, primenićemo SMOTE za balansiranje klasa pre treniranja svih modela.
 
 **Analiza rezultata:**
 Analiziraćemo koje karakteristike titlova najviše doprinose predikciji uspeha — npr. da li filmovi sa pozitivnijim sentimentom imaju veći ROI, ili da li određeni žanrovi (action vs drama) pokazuju različite obrasce uspeha.

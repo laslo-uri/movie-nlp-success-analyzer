@@ -55,7 +55,7 @@ The combination of textual content analysis (titles) with genre and financial da
 
 **Results:** Feature-based approach (TF-IDF + SVM) outperformed deep learning methods (BERT) with F1-score of 62.35% (ScriptBase) and 64.79% (MSC).
 
-**Relevance:** Directly confirms the possibility of predicting Oscar nominations based on text. We will use similar feature engineering techniques, but instead of screenplays we analyze subtitles and add financial data. We will use ensemble methods instead of just SVM.
+**Relevance:** Directly confirms the possibility of predicting Oscar nominations based on text. We will use similar feature engineering techniques, but instead of screenplays we analyze subtitles and add financial data. In addition to SVM, we will also use ensemble methods (Random Forest, XGBoost) to compare different approaches.
 
 ### 3.3 Success in Books: A Big Data Approach to Bestsellers [[3]](https://link.springer.com/article/10.1140/epjds/s13688-018-0135-y)
 
@@ -103,7 +103,17 @@ After collecting movie data, we will combine data from TMDB API (title, genre, b
 For each movie we will extract from subtitle text: (1) TF-IDF vectors of most frequent words and phrases appearing in dialogues, (2) sentiment score measuring whether dialogues are predominantly positive or negative, (3) lexical diversity showing vocabulary richness in the movie. These characteristics will be combined with movie genre (action, drama, comedy...) which we will encode as binary attributes.
 
 **Modeling:**
-Input to classifiers will be: movie genres, NLP subtitle characteristics and budget ratio. Output is binary prediction: successful (ROI ≥ 2) or unsuccessful movie. We will compare Random Forest, XGBoost and SVM as these models have proven effective for textual characteristics in relevant literature [2]. Given that we expect more unsuccessful than successful movies, we will apply SMOTE for class balancing before training.
+Input to classifiers will be: movie genres, NLP subtitle characteristics and budget ratio. Output is binary prediction: successful (ROI ≥ 2) or unsuccessful movie. 
+
+We will compare three different machine learning approaches:
+
+1. **Random Forest:** An ensemble method that combines multiple decision trees. It is effective for textual characteristics as it can capture nonlinear patterns and interactions between attributes.
+
+2. **XGBoost:** A gradient boosting algorithm that sequentially builds models correcting errors of previous ones. It is particularly effective for structured data and has shown excellent results in various classification tasks.
+
+3. **SVM (Support Vector Machine):** A classifier that finds the optimal hyperplane separating classes with maximum margin. SVM is particularly effective for textual data transformed with TF-IDF, which is confirmed in relevant literature [2] where TF-IDF + SVM outperformed deep learning methods (BERT) with F1-score of 62.35% and 64.79% on different screenplay corpora. We will use RBF kernel for nonlinear classification of high-dimensional textual characteristics.
+
+Given that we expect more unsuccessful than successful movies, we will apply SMOTE for class balancing before training all models.
 
 **Results analysis:**
 We will analyze which subtitle characteristics most contribute to success prediction — e.g., whether movies with more positive sentiment have higher ROI, or whether certain genres (action vs drama) show different success patterns.

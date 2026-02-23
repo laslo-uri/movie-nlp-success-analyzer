@@ -1,139 +1,135 @@
-# Movie Success Predictor
+# Movie NLP Success Analyzer
 
-**Academic Project - Systems for Research and Data Analysis (SIAP)**
+**Academic Project — SIAP (Systems for Research and Data Analysis)**
 
 *University of Novi Sad, Faculty of Technical Sciences*
 
-*Students: Laslo Uri (E2 163/2023), Denis Dautović (E2 166/2023), Nikola Janković (E2 130/2025)*
+*Laslo Uri (E2 163/2023) · Denis Dautovic (E2 166/2023) · Nikola Jankovic (E2 130/2025)*
 
-## Project Overview
+---
 
-A comprehensive machine learning system that analyzes movie titles, subtitles, and genres to predict commercial success and award nominations. Using Natural Language Processing (NLP) techniques on subtitle data combined with financial and genre information, the system classifies movies as successful/unsuccessful and predicts Oscar nomination probability.
+## Overview
+
+Predicting movie commercial success and Oscar nomination probability by combining **NLP analysis of subtitle texts** with financial and genre metadata. The system uses TF-IDF, sentiment analysis, and lexical diversity features extracted from subtitles alongside TMDB financial data, fed into Random Forest and XGBoost classifiers.
 
 ## Objectives
 
-- **Binary Classification**: Predict movie commercial success based on ROI (Return on Investment) metrics
-- **Award Prediction**: Predict probability of Oscar nominations using genre and title characteristics
-- **Feature Analysis**: Identify which subtitle characteristics (sentiment, lexical diversity, genre) most influence movie success
-- **NLP Integration**: Combine textual analysis with financial and categorical data for robust predictions
+| Goal | Approach |
+|------|----------|
+| **Commercial success prediction** | Binary classification based on ROI ≥ 2.0 |
+| **Award nomination prediction** | Predict Oscar nomination probability from genre + title features |
+| **Feature importance analysis** | Identify which subtitle characteristics most influence success |
+| **NLP + metadata fusion** | Combine textual features with financial and categorical data |
 
-## Methodology
+## Data Sources
 
-### Data Sources
-- **TMDB API**: Movie metadata (title, year, genres, budget, box office revenue)
-- **OpenSubtitles API**: Movie subtitle texts for NLP analysis
-- **Academy Awards Database**: Historical Oscar nomination data
+- **TMDB API** — movie metadata: title, year, genres, budget, revenue (76 yearly CSV files, 1950–2025)
+- **OpenSubtitles API** — subtitle texts for NLP feature extraction (~7,400 subtitle files collected)
+- **Academy Awards Database** — historical Oscar nomination and win data
 
-### Feature Engineering
-- **Genre Classification**: Binary encoding of movie genres (action, drama, comedy, horror, etc.)
-- **NLP Features**: TF-IDF vectors, sentiment analysis, lexical diversity metrics from subtitles
-- **Financial Features**: Log-transformed budget and ROI calculations
+## ML Pipeline
 
-### Machine Learning Pipeline
-1. **Data Collection**: Aggregate movie data from multiple APIs
-2. **Preprocessing**: Clean subtitles, extract features, handle missing data
-3. **Modeling**: Random Forest and XGBoost classifiers with SMOTE for class imbalance
-4. **Evaluation**: Stratified cross-validation with F1-score and AUC-ROC metrics
+```
+TMDB metadata ─┐
+                ├─▶ Preprocessing ─▶ Feature Engineering ─▶ Modeling ─▶ Evaluation
+Subtitle texts ─┘       │                    │                  │            │
+                    Clean text          TF-IDF vectors     Random Forest   F1-score
+                    Handle nulls        Sentiment scores   XGBoost         AUC-ROC
+                    Log-transform $     Lexical diversity  SMOTE balance   Cross-val
+                                        Genre encoding
+```
 
-## Technologies Used
+## Tech Stack
 
-- **Programming Language**: Python 3.10+
-- **Data Processing**: Pandas, NumPy
-- **Machine Learning**: Scikit-learn, XGBoost, Imbalanced-learn
-- **NLP**: SpaCy, NLTK, Gensim
-- **Visualization**: Matplotlib, Seaborn, Plotly
-- **Development Environment**: Jupyter Notebook
-
-## Dataset
-
-- **Scope**: 5,000+ movies (2000-2024) with complete financial and subtitle data
-- **Target Variables**:
-  - Commercial Success: Binary classification (ROI ≥ 2.0)
-  - Oscar Nomination: Binary classification (nominated/not nominated)
-- **Class Imbalance**: Expected higher proportion of unsuccessful/non-nominated movies
-
-## Expected Outcomes
-
-- Accurate prediction models for movie success and award nominations
-- Insights into how subtitle content and genre influence box office performance
-- Comparative analysis of different ML algorithms for textual data
-- Practical tool for film industry decision-making
-
-
-## Research Context
-
-This project builds upon existing literature in screenplay analysis and cultural product success prediction:
-- Emotional scene detection using subtitle analysis
-- Screenplay quality assessment for Oscar prediction
-- Big data approaches to bestseller prediction
+| Category | Libraries |
+|----------|-----------|
+| Data processing | Pandas, NumPy |
+| Machine learning | Scikit-learn, XGBoost, Imbalanced-learn |
+| NLP | SpaCy, NLTK, Gensim |
+| Visualization | Matplotlib, Seaborn, Plotly |
+| APIs | Requests, python-dotenv |
 
 ## Project Structure
 
 ```
 movie-nlp-success-analyzer/
-├── project_proposal/
-│   ├── Analiza uticaja filmskih titlova i žanrova na uspeh i priznanja.md
-│   ├── Analiza uticaja filmskih titlova i žanrova na uspeh i priznanja.pdf
+├── project/                          ← Main codebase & data
+│   ├── data/
+│   │   ├── raw/
+│   │   │   ├── tmdb_metadata/        76 yearly CSVs (movies_1950–2025.csv)
+│   │   │   ├── subtitles/            ~7,400 subtitle .txt files by TMDB ID
+│   │   │   ├── awards/               Award ceremony data
+│   │   │   └── oscars/               Oscar nomination data
+│   │   ├── processed/                Cleaned & merged datasets
+│   │   │   ├── final_movie_list.csv  Main dataset with labels
+│   │   │   ├── tmdb_enriched.csv     Enriched TMDB data
+│   │   │   ├── tmdb_combined.csv     All yearly TMDB CSVs merged
+│   │   │   ├── awards_master_partial.csv
+│   │   │   ├── awards_minor_categories.csv
+│   │   │   └── ...
+│   │   └── external/                 Third-party data
+│   ├── reports/
+│   │   └── figures/                  Generated visualizations
+│   ├── project_setup.py              Scaffold script (initial setup)
+│   └── requirements.txt              Python dependencies
+│
+├── project_proposal/                 ← Proposal documents (EN + SR)
 │   ├── Analysis of the impact of movie titles and genres on success and awards.md
-│   └── Analysis of the impact of movie titles and genres on success and awards.pdf
-├── research_papers/
+│   └── Analiza uticaja filmskih titlova i žanrova na uspeh i priznanja.md
+│
+├── research_papers/                  ← Literature review summaries
 │   ├── Detecting Emotional Scenes - Semantic Analysis on Subtitles.md
-│   ├── Detecting Emotional Scenes - Semantic Analysis on Subtitles.pdf
 │   ├── Screenplay Quality Assessment - Can We Predict Nominations.md
-│   ├── Screenplay Quality Assessment - Can We Predict Nominations.pdf
-│   ├── Success in Books - Big Data Approach to Bestsellers.md
-│   └── Success in Books - Big Data Approach to Bestsellers.pdf
-├── README.md
-├── 
+│   └── Success in Books - Big Data Approach to Bestsellers.md
+│
+├── README.md                         ← You are here
 └── .gitignore
 ```
 
-## Key Documents
-
-### Project Proposal
-- **[English Version](project_proposal/Analysis%20of%20the%20impact%20of%20movie%20titles%20and%20genres%20on%20success%20and%20awards.md)**: Complete project proposal in English
-- **[Serbian Version](project_proposal/Analiza%20uticaja%20filmskih%20titlova%20i%20%C5%BEanrova%20na%20uspeh%20i%20priznanja.md)**: Original project proposal in Serbian
-- **[English PDF](project_proposal/Analysis%20of%20the%20impact%20of%20movie%20titles%20and%20genres%20on%20success%20and%20awards.pdf)**: English proposal in PDF format
-- **[Serbian PDF](project_proposal/Analiza%20uticaja%20filmskih%20titlova%20i%20%C5%BEanrova%20na%20uspeh%20i%20priznanja.pdf)**: Serbian proposal in PDF format
-
-### Research Literature Reviews
-- **[Emotional Scene Detection](research_papers/Detecting%20Emotional%20Scenes%20-%20Semantic%20Analysis%20on%20Subtitles.md)**: Analysis of subtitle-based emotion detection ([PDF](research_papers/Detecting%20Emotional%20Scenes%20-%20Semantic%20Analysis%20on%20Subtitles.pdf))
-- **[Screenplay Quality Assessment](research_papers/Screenplay%20Quality%20Assessment%20-%20Can%20We%20Predict%20Nominations.md)**: Oscar nomination prediction from screenplays ([PDF](research_papers/Screenplay%20Quality%20Assessment%20-%20Can%20We%20Predict%20Nominations.pdf))
-- **[Book Sales Prediction](research_papers/Success%20in%20Books%20-%20Big%20Data%20Approach%20to%20Bestsellers.md)**: Big data approach to predicting book success ([PDF](research_papers/Success%20in%20Books%20-%20Big%20Data%20Approach%20to%20Bestsellers.pdf))
-
-## Academic Requirements
-
-- **Course**: SIAP - Systems for Research and Data Analysis
-- **Institution**: University of Novi Sad, Faculty of Technical Sciences
-- **Academic Year**: 2025/2026
-- **Deliverables**: Complete ML pipeline, comprehensive analysis, and research report
-
 ## Getting Started
 
-1. Clone the repository
-2. Review the project proposal documents in `project_proposal/`
-3. Examine the literature reviews in `research_papers/`
-4. Set up Python environment with required dependencies
-5. Obtain API keys for TMDB and OpenSubtitles
-6. Implement data collection, preprocessing, and modeling pipelines
+```bash
+# 1. Clone and enter
+git clone https://github.com/<your-username>/movie-nlp-success-analyzer.git
+cd movie-nlp-success-analyzer
+
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate    # macOS/Linux
+
+# 3. Install dependencies
+pip install -r project/requirements.txt
+
+# 4. Set up API keys
+cp project/.env.example project/.env
+# Edit .env with your TMDB and OpenSubtitles credentials
+
+# 5. Download SpaCy model
+python -m spacy download en_core_web_sm
+```
 
 ## Project Status
 
-- **Current Phase**: Literature review and project planning
-- **Next Milestones**:
-  - Data collection and preprocessing pipeline
-  - Feature engineering and baseline model development
-  - Model optimization and comparative analysis
-  - Final evaluation and research report
+- [x] Literature review and project proposal
+- [x] TMDB metadata collection (76 yearly files, 1950–2025)
+- [x] Subtitle download pipeline (~7,400 movies)
+- [x] Data cleaning and enrichment
+- [x] Exploratory data analysis and visualizations
+- [ ] NLP feature extraction (TF-IDF, sentiment, lexical diversity)
+- [ ] Model training and evaluation
+- [ ] Final report
 
-## Contributing
+## Documents
 
-This is an academic project developed by students at University of Novi Sad. For academic collaboration or questions, please contact the project team members.
+### Proposal
+- [English](project_proposal/Analysis%20of%20the%20impact%20of%20movie%20titles%20and%20genres%20on%20success%20and%20awards.md) · [PDF](project_proposal/Analysis%20of%20the%20impact%20of%20movie%20titles%20and%20genres%20on%20success%20and%20awards.pdf)
+- [Serbian](project_proposal/Analiza%20uticaja%20filmskih%20titlova%20i%20%C5%BEanrova%20na%20uspeh%20i%20priznanja.md) · [PDF](project_proposal/Analiza%20uticaja%20filmskih%20titlova%20i%20%C5%BEanrova%20na%20uspeh%20i%20priznanja.pdf)
+
+### Literature Reviews
+- [Emotional Scene Detection via Subtitle Analysis](research_papers/Detecting%20Emotional%20Scenes%20-%20Semantic%20Analysis%20on%20Subtitles.md)
+- [Screenplay Quality Assessment for Oscar Prediction](research_papers/Screenplay%20Quality%20Assessment%20-%20Can%20We%20Predict%20Nominations.md)
+- [Big Data Approach to Bestseller Prediction](research_papers/Success%20in%20Books%20-%20Big%20Data%20Approach%20to%20Bestsellers.md)
 
 ## License
 
-This project is developed as part of an academic course at University of Novi Sad, Faculty of Technical Sciences. All rights reserved to the project authors and the university. Intended for educational and research purposes only.
-
----
-
-*Contact: Faculty of Technical Sciences, University of Novi Sad*
+Academic project — University of Novi Sad, Faculty of Technical Sciences. For educational and research purposes only.

@@ -1,64 +1,57 @@
-# macOS
+# ── macOS ──
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
 
-# Python
+# ── Python ──
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
 *.egg
+*.egg-info/
+dist/
+build/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Virtual environments
+# ── Virtual environments ──
 venv/
 env/
-ENV/
+.venv/
 
-# IDE
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── IDE ──
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Data files
-*.csv
-*.json
-*.pkl
-*.h5
-*.sqlite
-
-# API keys and secrets
+# ── Secrets ──
 .env
 .env.local
 secrets.json
 
-# Logs
+# ── Logs ──
 *.log
 logs/
 
-# Temporary files
+# ── Temp ──
 *.tmp
 *.temp
+
+# ── Data (large files — do not commit) ──
+project/data/raw/subtitles/
+project/data/raw/tmdb_metadata/
+project/data/raw/awards/
+project/data/raw/oscars/
+project/data/processed/*.csv
+project/data/processed/*.png
+project/data/external/
+
+# ── Model artifacts ──
+*.pkl
+*.h5
+*.joblib
+models/
