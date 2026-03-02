@@ -42,16 +42,26 @@ logs/
 *.temp
 
 # ── Data (large files — do not commit) ──
-project/data/raw/subtitles/
-project/data/raw/tmdb_metadata/
-project/data/raw/awards/
-project/data/raw/oscars/
-project/data/processed/*.csv
-project/data/processed/*.png
-project/data/external/
+data/raw/subtitles/
+data/raw/tmdb_metadata/
+data/raw/awards/
+data/raw/oscars/
+data/processed/*.csv
+data/processed/*.png
+data/external/
 
 # ── Model artifacts ──
 *.pkl
 *.h5
 *.joblib
+*.npz
 models/
+
+# ── Generated reports ──
+reports/
+
+# ── Helpers ──
+helpers/
+
+# ── Phase 2 (not pushed for now) ──
+phase_02/

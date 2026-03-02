@@ -1,0 +1,26 @@
+# Core
+pandas>=2.3
+numpy>=2.0
+requests>=2.32
+python-dotenv>=1.0
+scipy>=1.14
+beautifulsoup4>=4.12
+
+# NLP
+spacy>=3.8
+nltk>=3.9
+# gensim>=4.4  # Uncomment when using Python 3.11/3.12; not compatible with Python 3.14
+textblob>=0.18
+
+# ML
+scikit-learn>=1.6
+xgboost>=2.1
+imbalanced-learn>=0.12
+
+# Visualization
+matplotlib>=3.9
+seaborn>=0.13
+plotly>=6.0
+
+# Notebooks (clear_outputs script)
+nbformat>=5.0
