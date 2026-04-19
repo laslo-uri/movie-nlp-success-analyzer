@@ -42,13 +42,7 @@ logs/
 *.temp
 
 # ── Data (large files — do not commit) ──
-data/raw/subtitles/
-data/raw/tmdb_metadata/
-data/raw/awards/
-data/raw/oscars/
-data/processed/*.csv
-data/processed/*.png
-data/external/
+data/
 
 # ── Model artifacts ──
 *.pkl
@@ -57,11 +51,16 @@ data/external/
 *.npz
 models/
 
-# ── Generated reports ──
-reports/
+# ── Report helpers & final deliverables ──
+helpers_final_report/
+final_report/
 
 # ── Helpers ──
 helpers/
 
-# ── Phase 2 (not pushed for now) ──
-phase_02/
+# ── Guides & specs (keep PDFs, ignore MD drafts) ──
+phase_01/guides/*.md
+phase_01/specifications/*.md
+phase_02/guides/
+phase_02/specifications/
+phase_02/KT2_*.md

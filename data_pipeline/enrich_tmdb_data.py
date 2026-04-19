@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import requests
 import pandas as pd
@@ -80,6 +81,7 @@ def main():
     print(f"We have {total_movies} movies left to process...")
 
     batch_data = []
+    t_start = time.time()
     
     for i, movie_id in enumerate(movies_to_process):
         details = get_movie_details(movie_id)
@@ -90,7 +92,8 @@ def main():
         # We save our progress in chunks of 100 movies.
         # This way, if our internet drops, we don't need to restart the process.
         # We also trigger a save if we are on the very last movie in the list.
-        if (i + 1) % 100 == 0 or (i + 1) == total_movies:
+        done = i + 1
+        if done % 100 == 0 or done == total_movies:
             new_df = pd.DataFrame(batch_data)
             
             # If our save file already exists, we just add the new rows to the bottom (append mode).
@@ -100,7 +103,19 @@ def main():
             else:
                 new_df.to_csv(OUTPUT_FILE, mode='w', header=True, index=False)
             
-            print(f"Saved a chunk of data. Progress so far: {i + 1} out of {total_movies}")
+            elapsed = time.time() - t_start
+            pct = done / total_movies * 100
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total_movies - done) / rate if rate > 0 else 0
+            if eta < 60:
+                eta_str = f"{eta:.0f}s"
+            elif eta < 3600:
+                eta_str = f"{eta / 60:.1f}m"
+            else:
+                eta_str = f"{eta / 3600:.1f}h"
+            print(f"  {done:,}/{total_movies:,}  ({pct:.1f}%)  "
+                  f"{rate:.1f} movies/s  ETA {eta_str}")
+            sys.stdout.flush()
             
             # Empty the list so it's ready for the next chunk of 100 movies
             batch_data = [] 
@@ -108,7 +123,12 @@ def main():
             # Add a tiny pause so TMDB doesn't block us for making too many requests
             time.sleep(0.2) 
 
-    print("Finished grabbing all extra movie details!")
+    elapsed = time.time() - t_start
+    if elapsed < 60:
+        t_str = f"{elapsed:.0f}s"
+    else:
+        t_str = f"{elapsed / 60:.1f}m"
+    print(f"Finished grabbing all extra movie details! ({t_str} total)")
 
 if __name__ == "__main__":
     main()

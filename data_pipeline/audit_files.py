@@ -1,3 +1,5 @@
+import time
+import sys
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -28,10 +30,12 @@ def main():
         return
 
     audit_data = []
+    total = len(files)
     
-    print(f"Scanning {len(files)} files...")
+    print(f"Scanning {total:,} files...")
+    t_start = time.time()
     
-    for file_path in files:
+    for i, file_path in enumerate(files):
         try:
             # Calculate file size in Kilobytes
             size_kb = file_path.stat().st_size / 1024
@@ -71,6 +75,16 @@ def main():
                 "size_kb": None,
                 "status": "ERROR"
             })
+
+        done = i + 1
+        if done % 500 == 0 or done == total:
+            elapsed = time.time() - t_start
+            pct = done / total * 100
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            eta_str = f"{eta:.0f}s" if eta < 60 else f"{eta/60:.1f}m"
+            print(f"  {done:,}/{total:,}  ({pct:.1f}%)  ETA {eta_str}")
+            sys.stdout.flush()
 
     # Convert our list of dictionaries into a pandas DataFrame for easy analysis
     df = pd.DataFrame(audit_data)

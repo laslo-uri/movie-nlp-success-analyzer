@@ -1,0 +1,5 @@
+Task,Feature set,Best (baseline),F1 (baseline),AUC (baseline),Best (tuned),F1 (tuned),AUC (tuned)
+Commercial,7_+runtime,SVM (linear),0.657,0.632,RF (tuned),0.664,0.631
+Commercial,8_+vote_revenue,SVM (linear),0.657,0.632,RF (tuned),0.664,0.631
+Award,7_+runtime,Random Forest,0.464,0.782,XGB (tuned),0.490,0.801
+Award,8_+vote_revenue,XGBoost,0.527,0.826,LogReg (tuned),0.549,0.857

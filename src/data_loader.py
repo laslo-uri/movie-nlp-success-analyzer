@@ -81,7 +81,7 @@ def safe_literal_eval(x) -> list:
     """
     try:
         return ast.literal_eval(x) if isinstance(x, str) else []
-    except:
+    except (ValueError, SyntaxError):
         return []
 
 
@@ -120,7 +120,7 @@ def create_genre_dummies(df: pd.DataFrame, unique_genres: List[str]) -> pd.DataF
     return df
 
 
-def create_feature_sets(df: pd.DataFrame, unique_genres: List[str]) -> Dict[str, List[str]]:
+def create_feature_sets(df: pd.DataFrame, unique_genres: List[str]) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
     """
     Define feature sets for modeling.
 
@@ -129,7 +129,7 @@ def create_feature_sets(df: pd.DataFrame, unique_genres: List[str]) -> Dict[str,
         unique_genres: List of unique genres
 
     Returns:
-        Dictionary of feature set names to column lists
+        Tuple of (feature_sets dict, DataFrame with log-transformed columns added)
     """
     # Basic features (always available)
     basic_features = ['budget', 'revenue', 'runtime', 'vote_count']
@@ -144,8 +144,6 @@ def create_feature_sets(df: pd.DataFrame, unique_genres: List[str]) -> Dict[str,
         'sentiment_compound', 'sentiment_pos', 'sentiment_neg', 'sentiment_neu'
     ]
 
-    # Log-transformed versions
-    log_features = ['basic_log', 'basic_genre_log', 'basic_genre_nlp_log']
     feature_sets = {
         'basic': basic_features,
         'basic_genre': basic_features + genre_features,

@@ -167,12 +167,14 @@ def main():
         # Filter the dataframe to only include movies we haven't touched yet
         pending_df = df[~df['id'].isin(all_done)]
     
-    print(f"Processing {len(pending_df)} remaining movies...")
+    total_pending = len(pending_df)
+    print(f"Processing {total_pending:,} remaining movies...")
     
     success_count = 0
     fail_count = 0
+    t_start = time.time()
     
-    for index, row in pending_df.iterrows():
+    for seq, (index, row) in enumerate(pending_df.iterrows(), 1):
         title = row['title']
         tmdb_id = row['id']
         
@@ -181,8 +183,9 @@ def main():
             year = int(str(row['release_date'])[:4])
         except Exception:
             year = 0
-            
-        print(f"[{index}] {title} ({year})...", end=" ")
+
+        pct = seq / total_pending * 100
+        print(f"[{seq}/{total_pending} ({pct:.1f}%)] {title} ({year})...", end=" ")
         
         # Final safety check to avoid overwriting files
         if (OUTPUT_DIR / f"{tmdb_id}.txt").exists():
@@ -215,8 +218,20 @@ def main():
         time.sleep(random.uniform(2.0, 5.0))
         
         # Print a mini status report every 10 attempts
-        if (success_count + fail_count) % 10 == 0:
-            print(f"--- Session Stats: {success_count} Successes | {fail_count} Failures ---")
+        attempts = success_count + fail_count
+        if attempts > 0 and attempts % 10 == 0:
+            elapsed = time.time() - t_start
+            rate = attempts / elapsed if elapsed > 0 else 0
+            remaining = total_pending - seq
+            eta = remaining / rate if rate > 0 else 0
+            if eta < 60:
+                eta_str = f"{eta:.0f}s"
+            elif eta < 3600:
+                eta_str = f"{eta / 60:.1f}m"
+            else:
+                eta_str = f"{eta / 3600:.1f}h"
+            print(f"--- Stats: {success_count} OK | {fail_count} Failed | "
+                  f"{rate:.2f} movies/s | ETA {eta_str} ---")
 
 if __name__ == "__main__":
     main()

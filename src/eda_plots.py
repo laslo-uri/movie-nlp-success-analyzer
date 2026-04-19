@@ -313,7 +313,7 @@ def plot_missing_data_heatmap(df: pd.DataFrame, figures_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(missing_matrix.corr(), annot=True, cmap='YlOrRd', fmt='.2f',
                 linewidths=0.5, ax=ax, vmin=0, vmax=1)
-    ax.set_title('Missing Data Co-occurrence (zero-value correlation)', fontweight='bold')
+    ax.set_title('Zero-Value Co-occurrence (budget, revenue, runtime, votes)', fontweight='bold')
     plt.tight_layout()
     plt.savefig(figures_dir / '01_eda_13_missing_data_heatmap.png', dpi=150, bbox_inches='tight')
     plt.show()

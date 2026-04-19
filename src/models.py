@@ -5,6 +5,8 @@ Provides reusable functions for training, tuning, and evaluating classifiers,
 so notebooks remain concise and narrative-focused.
 """
 
+import time
+import sys
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import (
@@ -17,7 +19,8 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier, StackingC
 from sklearn.svm import SVC
 from sklearn.metrics import (
     f1_score, roc_auc_score, precision_score, recall_score,
-    balanced_accuracy_score,
+    balanced_accuracy_score, matthews_corrcoef,
+    classification_report,
     confusion_matrix, ConfusionMatrixDisplay, roc_curve
 )
 from imblearn.over_sampling import SMOTE, ADASYN
@@ -123,8 +126,11 @@ def train_baseline(split, models=None, use_smote=False):
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     results = {}
+    model_names = list(models.keys())
+    n_models = len(model_names)
+    t0 = time.time()
 
-    for name, model in models.items():
+    for idx, (name, model) in enumerate(models.items(), 1):
         if isinstance(model, xgb.XGBClassifier):
             model.set_params(scale_pos_weight=xgb_scale)
 
@@ -148,8 +154,9 @@ def train_baseline(split, models=None, use_smote=False):
             'best_threshold': best_t,
             'test_auc': roc_auc_score(split['y_test'], y_test_proba),
             'test_bal_acc': balanced_accuracy_score(split['y_test'], y_test_pred),
-            'test_precision': precision_score(split['y_test'], y_test_pred),
-            'test_recall': recall_score(split['y_test'], y_test_pred),
+            'test_precision': precision_score(split['y_test'], y_test_pred, zero_division=0),
+            'test_recall': recall_score(split['y_test'], y_test_pred, zero_division=0),
+            'test_mcc': matthews_corrcoef(split['y_test'], y_test_pred),
             'y_test': split['y_test'], 'y_test_pred': y_test_pred,
             'y_test_proba': y_test_proba, 'features': split['features'],
         }
@@ -158,8 +165,11 @@ def train_baseline(split, models=None, use_smote=False):
         elif hasattr(model, 'coef_'):
             results[name]['feature_importance'] = np.abs(model.coef_[0])
 
-        print(f"  {name:25s} CV F1: {cv_scores.mean():.3f} ± {cv_scores.std():.3f} | "
-              f"Test F1: {results[name]['test_f1']:.3f} (opt: {test_f1_opt:.3f}) | AUC: {results[name]['test_auc']:.3f}")
+        elapsed = time.time() - t0
+        print(f"  [{idx}/{n_models}] {name:25s} CV F1: {cv_scores.mean():.3f} ± {cv_scores.std():.3f} | "
+              f"Test F1: {results[name]['test_f1']:.3f} (opt: {test_f1_opt:.3f}) | AUC: {results[name]['test_auc']:.3f}  "
+              f"({elapsed:.1f}s)")
+        sys.stdout.flush()
 
     return results
 
@@ -208,9 +218,13 @@ def train_with_tuning(split, balancing='class_weight', n_iter=20):
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     results = {}
+    model_names = list(models_grids.keys())
+    n_models = len(model_names)
+    t0 = time.time()
 
-    for name, cfg in models_grids.items():
-        print(f"  Training {name}...")
+    for idx, (name, cfg) in enumerate(models_grids.items(), 1):
+        print(f"  [{idx}/{n_models}] Training {name}...")
+        sys.stdout.flush()
         search = RandomizedSearchCV(
             cfg['model'], cfg['params'],
             n_iter=min(n_iter, np.prod([len(v) for v in cfg['params'].values()])),
@@ -234,8 +248,9 @@ def train_with_tuning(split, balancing='class_weight', n_iter=20):
             'best_threshold': best_t,
             'test_auc': roc_auc_score(split['y_test'], y_test_proba),
             'test_bal_acc': balanced_accuracy_score(split['y_test'], y_test_pred),
-            'test_precision': precision_score(split['y_test'], y_test_pred),
-            'test_recall': recall_score(split['y_test'], y_test_pred),
+            'test_precision': precision_score(split['y_test'], y_test_pred, zero_division=0),
+            'test_recall': recall_score(split['y_test'], y_test_pred, zero_division=0),
+            'test_mcc': matthews_corrcoef(split['y_test'], y_test_pred),
             'y_test': split['y_test'], 'y_test_pred': y_test_pred,
             'y_test_proba': y_test_proba, 'features': split['features'],
         }
@@ -244,20 +259,35 @@ def train_with_tuning(split, balancing='class_weight', n_iter=20):
         elif hasattr(model, 'coef_'):
             results[name]['feature_importance'] = np.abs(model.coef_[0])
 
+        elapsed = time.time() - t0
         print(f"    CV F1: {cv_scores.mean():.3f} ± {cv_scores.std():.3f} | "
-              f"Test F1: {results[name]['test_f1']:.3f} | AUC: {results[name]['test_auc']:.3f}")
+              f"Test F1: {results[name]['test_f1']:.3f} | AUC: {results[name]['test_auc']:.3f}  "
+              f"({elapsed:.1f}s)")
+        sys.stdout.flush()
 
     return results
 
 
-def build_ensembles(split):
-    """Build Voting and Stacking ensembles. Returns dict of results."""
-    X_train, y_train = split['X_train'], split['y_train']
+def build_ensembles(split, use_smote=False):
+    """
+    Build Voting and Stacking ensembles. Returns dict of results.
+
+    If use_smote is True, applies SMOTE on the training fold before fitting
+    (aligned with train_baseline(..., use_smote=True)); XGBoost scale_pos_weight
+    uses the original (pre-SMOTE) class ratio.
+    """
+    X_train, y_train = split['X_train'].copy(), split['y_train'].copy()
+    orig_pos_ct = (split['y_train'] == 1).sum()
+    orig_neg_ct = (split['y_train'] == 0).sum()
+    xgb_scale = orig_neg_ct / max(orig_pos_ct, 1)
+
+    if use_smote:
+        sm = SMOTE(random_state=RANDOM_SEED)
+        X_train, y_train = sm.fit_resample(X_train, y_train)
+
     scaler = StandardScaler()
     X_train_s = scaler.fit_transform(X_train)
     X_test_s = scaler.transform(split['X_test'])
-
-    xgb_scale = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
 
     base = [
@@ -271,15 +301,20 @@ def build_ensembles(split):
     results = {}
     y_test = split['y_test']
 
-    for ens_name, ens_model in [
+    ensembles = [
         ('Soft Voting', VotingClassifier(estimators=base, voting='soft')),
         ('Hard Voting', VotingClassifier(estimators=base, voting='hard')),
         ('Stacking (LR)', StackingClassifier(
             estimators=base,
             final_estimator=LogisticRegression(class_weight='balanced', max_iter=2000, random_state=RANDOM_SEED),
             cv=cv, passthrough=False)),
-    ]:
-        print(f"  Training {ens_name}...")
+    ]
+    n_ens = len(ensembles)
+    t0 = time.time()
+
+    for idx, (ens_name, ens_model) in enumerate(ensembles, 1):
+        print(f"  [{idx}/{n_ens}] Training {ens_name}...")
+        sys.stdout.flush()
         ens_model.fit(X_train_s, y_train)
         y_pred = ens_model.predict(X_test_s)
         has_proba = hasattr(ens_model, 'predict_proba')
@@ -288,12 +323,15 @@ def build_ensembles(split):
         results[ens_name] = {
             'test_f1': f1_score(y_test, y_pred),
             'test_auc': roc_auc_score(y_test, y_proba) if y_proba is not None else None,
-            'test_precision': precision_score(y_test, y_pred),
-            'test_recall': recall_score(y_test, y_pred),
+            'test_precision': precision_score(y_test, y_pred, zero_division=0),
+            'test_recall': recall_score(y_test, y_pred, zero_division=0),
+            'test_mcc': matthews_corrcoef(y_test, y_pred),
             'y_test': y_test, 'y_test_pred': y_pred, 'y_test_proba': y_proba,
         }
-        auc_str = f"{results[ens_name]['test_auc']:.3f}" if results[ens_name]['test_auc'] else "N/A"
-        print(f"    Test F1: {results[ens_name]['test_f1']:.3f} | AUC: {auc_str}")
+        elapsed = time.time() - t0
+        auc_str = f"{results[ens_name]['test_auc']:.3f}" if results[ens_name]['test_auc'] is not None else "N/A"
+        print(f"    Test F1: {results[ens_name]['test_f1']:.3f} | AUC: {auc_str}  ({elapsed:.1f}s)")
+        sys.stdout.flush()
 
     return results
 
@@ -305,7 +343,7 @@ def results_table(results):
     rows = []
     for name, r in results.items():
         row = {'Model': name, 'Test F1': fmt(r['test_f1']), 'Test AUC': fmt(r.get('test_auc')),
-               'Bal. Acc.': fmt(r.get('test_bal_acc')),
+               'Bal. Acc.': fmt(r.get('test_bal_acc')), 'MCC': fmt(r.get('test_mcc')),
                'Precision': fmt(r['test_precision']), 'Recall': fmt(r['test_recall'])}
         if r.get('test_f1_opt') is not None:
             row['F1 (opt)'] = fmt(r['test_f1_opt'])
@@ -313,6 +351,20 @@ def results_table(results):
             row['CV F1'] = f"{r['cv_f1_mean']:.3f} ± {r['cv_f1_std']:.3f}"
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def print_classification_report(results, model_name):
+    """Print sklearn classification report for a specific model from a results dict."""
+    if model_name not in results:
+        print(f"Model '{model_name}' not found in results.")
+        return
+    r = results[model_name]
+    print(f"\n{'='*50}")
+    print(f"Classification Report — {model_name}")
+    print(f"{'='*50}")
+    print(classification_report(r['y_test'], r['y_test_pred'],
+                                target_names=['Negative', 'Positive'],
+                                zero_division=0))
 
 
 # --- Plotting Helpers ---
@@ -354,8 +406,11 @@ def plot_roc_curves(results, task_name, save_path=None):
     plt.show()
 
 
-def plot_feature_importance(results, feat_cols, task_name, models=('RF', 'XGB'), save_path=None):
-    """Plot feature importance for tree-based models."""
+def plot_feature_importance(results, feat_cols, task_name, models=('Random Forest', 'XGBoost'), save_path=None):
+    """Plot feature importance for tree-based models.
+
+    ``models`` must match keys in ``results`` (e.g. 'Random Forest', 'XGBoost' from train_baseline).
+    """
     fig, axes = plt.subplots(1, len(models), figsize=(9 * len(models), 8))
     if len(models) == 1:
         axes = [axes]

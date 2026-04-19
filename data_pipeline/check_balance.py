@@ -47,7 +47,7 @@ def main():
     # 3. Popularity Bias
     # Ensures our dataset isn't overwhelmingly skewed toward obscure indie films
     popular = df_usable['is_popular'].sum()
-    print(f"Popular (>50 votes): {popular} ({popular/len(df_usable):.1%})")
+    print(f"Popular (>=500 votes): {popular} ({popular/len(df_usable):.1%})")
     
     # General rule of thumb: NLP models require a decent amount of samples to learn vocabularies effectively
     if len(df_usable) < 1000:

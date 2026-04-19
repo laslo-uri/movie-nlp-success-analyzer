@@ -6,6 +6,8 @@ The notebook imports these rather than redefining them inline.
 """
 
 import re
+import time
+import sys
 import numpy as np
 import pandas as pd
 import nltk
@@ -91,12 +93,18 @@ def extract_lexical_diversity(text: str) -> Dict[str, float]:
 # Sentiment (VADER)
 # ---------------------------------------------------------------------------
 
+_vader_instance = None
+
 def _get_vader():
+    global _vader_instance
+    if _vader_instance is not None:
+        return _vader_instance
     try:
-        return SentimentIntensityAnalyzer()
+        _vader_instance = SentimentIntensityAnalyzer()
     except LookupError:
         nltk.download('vader_lexicon', quiet=True)
-        return SentimentIntensityAnalyzer()
+        _vader_instance = SentimentIntensityAnalyzer()
+    return _vader_instance
 
 
 def extract_sentiment_features(text: str) -> Dict[str, float]:
@@ -194,16 +202,30 @@ def extract_textblob_features(text: str) -> Dict[str, float]:
 # Batch processing: extract ALL features for a list of movie IDs
 # ---------------------------------------------------------------------------
 
+def _fmt_eta(seconds: float) -> str:
+    """Format seconds into a human-readable ETA string."""
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    m, s = divmod(int(seconds), 60)
+    if m < 60:
+        return f"{m}m {s:02d}s"
+    h, m = divmod(m, 60)
+    return f"{h}h {m:02d}m"
+
+
 def process_subtitle_batch(movie_ids: List[int], subtitle_dir: Path,
-                           progress_every: int = 500) -> pd.DataFrame:
+                           progress_every: int = 100) -> pd.DataFrame:
     """
     Process subtitle files and extract all NLP features in one pass.
 
     Returns a DataFrame with one row per successfully processed movie.
     """
+    total = len(movie_ids)
     rows = []
     ok, err = 0, 0
-    for mid in movie_ids:
+    t_start = time.time()
+
+    for i, mid in enumerate(movie_ids):
         try:
             path = subtitle_dir / f"{mid}.txt"
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -223,12 +245,24 @@ def process_subtitle_batch(movie_ids: List[int], subtitle_dir: Path,
             }
             rows.append(row)
             ok += 1
-            if ok % progress_every == 0:
-                print(f"  Processed {ok:,} files...")
         except Exception as e:
             print(f"  Error on movie {mid}: {e}")
             err += 1
-    print(f"Done: {ok:,} processed, {err:,} errors")
+
+        done = i + 1
+        if done % progress_every == 0 or done == total:
+            elapsed = time.time() - t_start
+            pct = done / total * 100
+            rate = done / elapsed if elapsed > 0 else 0
+            eta = (total - done) / rate if rate > 0 else 0
+            print(f"  {done:,}/{total:,}  ({pct:5.1f}%)  "
+                  f"{rate:.1f} files/s  "
+                  f"ETA {_fmt_eta(eta)}")
+            sys.stdout.flush()
+
+    elapsed = time.time() - t_start
+    print(f"Done: {ok:,} processed, {err:,} errors  "
+          f"({_fmt_eta(elapsed)} total)")
     return pd.DataFrame(rows)
 
 

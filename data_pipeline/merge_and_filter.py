@@ -81,9 +81,9 @@ def main():
     mask_critical = df_merged['title'].apply(normalize_title).isin(award_titles)
     
     # Filter C: Popularity
-    # We keep the movie if at least 50 people voted on it. 
-    # This weeds out obscure student films or junk entries in TMDB.
-    mask_popular = df_merged['vote_count'] >= 50
+    # We keep the movie if at least 500 people voted on it.
+    # This represents genuine audience engagement beyond niche films.
+    mask_popular = df_merged['vote_count'] >= 500
     
     # Combine the masks. A movie only needs to pass ONE of these tests to be kept.
     final_df = df_merged[mask_financial | mask_critical | mask_popular].copy()
